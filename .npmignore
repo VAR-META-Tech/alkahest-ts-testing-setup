@@ -1,0 +1,59 @@
+# Development files
+test/
+src/
+tsconfig.json
+*.test.ts
+*.spec.ts
+MIGRATION.md
+INTEGRATION.md
+
+# Build tools and configs
+.github/
+.vscode/
+.eslintrc*
+.prettierrc*
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.test
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+.nyc_output
+
+# Temporary folders
+tmp/
+temp/
+
+# Cache directories
+.cache
+.parcel-cache

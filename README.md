@@ -1,104 +1,24 @@
-# Alkahest Testing Environment
+# alkahest-test-env
 
-A testing environment setup for Alkahest -  testing with Anvil, contract deployments, and test accounts.
-
-## Overview
-
-This package provides a comprehensive testing setup for Alkahest projects, including:
-
-- **Anvil Integration**: Automated local blockchain setup using Anvil
-- **Contract Deployment**: All Alkahest contracts pre-deployed and configured
-- **Test Accounts**: Pre-funded accounts with mock tokens
-- **Token Utilities**: Helper functions for testing with ERC20, ERC721, and ERC1155 tokens
-- **Type Safety**: Full TypeScript support with proper type definitions
+A comprehensive test environment setup package for Alkahest protocol testing.
 
 ## Installation
 
 ```bash
-npm install alkahest-ts-test-setup
+npm install alkahest-test-env
 # or
-yarn add alkahest-ts-test-setup
+yarn add alkahest-test-env
 # or
-bun add alkahest-ts-test-setup
+bun add alkahest-test-env
 ```
 
-## Requirements
-
-- [Bun](https://bun.sh/) runtime
-- [ArkType](https://arktype.io/) for type validation (peer dependency)
-
-## Quick Start
+## Usage
 
 ```typescript
-import { setupTestEnvironment, teardownTestEnvironment } from 'alkahest-ts-test-setup';
-import { makeClient } from 'your-alkahest-project';
+import { setupTestEnvironment, teardownTestEnvironment } from 'alkahest-test-env';
 
-// Setup test environment with Alkahest clients
-const testContext = await setupTestEnvironment(makeClient);
-
-// Access test accounts and pre-created Alkahest clients
-const { alice, bob, aliceClient, bobClient, addresses, mockAddresses } = testContext;
-
-// Alkahest clients are ready to use immediately!
-// aliceClient and bobClient are already created using your makeClient function
-
-// Run your tests here...
-
-// Cleanup
-await teardownTestEnvironment(testContext);
-```
-
-## Test Context
-
-The `setupTestEnvironment()` function returns a `TestContext` object containing:
-
-### Accounts and Clients
-- `alice` / `bob`: Test account addresses
-- `aliceClient` / `bobClient`: Ready-to-use Alkahest clients
-- `aliceClientWs` / `bobClientWs`: WebSocket Alkahest clients for real-time events
-- `aliceWalletClient` / `bobWalletClient`: Underlying Viem wallet clients
-- `aliceWalletClientWs` / `bobWalletClientWs`: WebSocket wallet clients
-- `testClient`: Test client with deployment capabilities
-
-### Contract Addresses
-- **EAS**: Ethereum Attestation Service contracts
-- **Arbiters**: Various arbiter implementations (Trivial, TrustedParty, etc.)
-- **Obligations**: ERC20, ERC721, ERC1155, TokenBundle, Attestation obligations
-- **Barter Utils**: Cross-token barter utilities
-
-### Mock Tokens
-- `erc20A` / `erc20B`: Mock ERC20 tokens
-- `erc721A` / `erc721B`: Mock ERC721 tokens  
-- `erc1155A` / `erc1155B`: Mock ERC1155 tokens
-
-## Token Testing Utilities
-
-```typescript
-import { createTokenTestExtension, getErc20Balance } from 'alkahest-ts-test-setup';
-
-// Extend your test client with token utilities
-const testClient = createTestClient(/* config */)
-  .extend(publicActions)
-  .extend(createTokenTestExtension());
-
-// Check token balances
-const balance = await testClient.getErc20Balance(
-  { address: mockAddresses.erc20A },
-  alice
-);
-
-// Or use standalone functions
-const balance2 = await getErc20Balance(testClient, mockAddresses.erc20A, alice);
-```
-
-## Example Test
-
-```typescript
-import { test, expect, beforeAll, afterAll } from 'bun:test';
-import { parseEther } from 'viem';
-import { setupTestEnvironment, teardownTestEnvironment, type TestContext } from 'alkahest-ts-test-setup';
-
-let testContext: TestContext;
+// In your test files
+let testContext;
 
 beforeAll(async () => {
   testContext = await setupTestEnvironment();
@@ -108,75 +28,89 @@ afterAll(async () => {
   await teardownTestEnvironment(testContext);
 });
 
-test('should have funded accounts', async () => {
-  const { alice, aliceWalletClient } = testContext;
-  
-  const balance = await aliceWalletClient.getBalance({ address: alice });
-  expect(balance).toBeGreaterThan(parseEther('5'));
-});
-
-test('should have deployed contracts', async () => {
-  const { addresses } = testContext;
-  
-  expect(addresses.eas).toMatch(/^0x[a-fA-F0-9]{40}$/);
-  expect(addresses.erc20EscrowObligation).toMatch(/^0x[a-fA-F0-9]{40}$/);
-});
-
-test('should have distributed mock tokens', async () => {
-  const { alice, mockAddresses, testClient } = testContext;
-  
-  const balance = await testClient.getErc20Balance(
-    { address: mockAddresses.erc20A },
-    alice
-  );
-  expect(balance).toBe(parseEther('1000'));
-});
+// Use testContext.aliceClient, testContext.bobClient, etc. in your tests
 ```
 
-## Integration with Alkahest
+## What's Included
 
-To use this testing environment with your Alkahest project:
+This package provides:
 
-1. Install this package as a dev dependency
-2. Remove the existing test setup from your project
-3. Update your tests to use this package:
+- **Complete test environment setup** with Anvil (local Ethereum node)
+- **Pre-deployed contracts** including all Alkahest obligations, arbiters, and utilities
+- **Mock tokens** (ERC20, ERC721, ERC1155) for testing
+- **Test accounts** (Alice, Bob) with funded balances
+- **Alkahest clients** ready to use with both HTTP and WebSocket transports
+- **Utility functions** for token testing and address comparison
+
+## API
+
+### setupTestEnvironment()
+
+Sets up a complete test environment and returns a `TestContext` object containing:
+
+- `anvil`: The Anvil instance
+- `testClient`: Extended test client with token utilities
+- `alice`, `bob`: Test account addresses
+- `aliceClient`, `bobClient`: Alkahest clients for test accounts
+- `aliceClientWs`, `bobClientWs`: WebSocket-enabled Alkahest clients
+- `addresses`: All deployed contract addresses
+- `mockAddresses`: Mock token contract addresses
+- `anvilInitState`: Initial blockchain state for test resets
+
+### teardownTestEnvironment(context)
+
+Cleans up the test environment by stopping the Anvil instance.
+
+### Utility Functions
+
+- `compareAddresses(a, b)`: Compare Ethereum addresses (case-insensitive)
+- `createTokenTestExtension()`: Create token testing extensions for viem clients
+
+## Example
 
 ```typescript
-// Before (in your Alkahest project)
-import { setupTestEnvironment } from './tests/utils/setup';
+import { setupTestEnvironment, teardownTestEnvironment } from 'alkahest-test-env';
+import { parseEther } from 'viem';
 
-// After 
-import { setupTestEnvironment } from 'alkahest-ts-test-setup';
+describe('My Alkahest Tests', () => {
+  let testContext;
+
+  beforeAll(async () => {
+    testContext = await setupTestEnvironment();
+  });
+
+  afterAll(async () => {
+    await teardownTestEnvironment(testContext);
+  });
+
+  test('should create an ERC20 escrow', async () => {
+    const { aliceClient, bobClient, mockAddresses } = testContext;
+    
+    // Alice creates an escrow to trade her ERC20 tokens
+    const { attested } = await aliceClient.erc20.permitAndBuyWithErc20(
+      {
+        address: mockAddresses.erc20A,
+        value: parseEther('100'),
+      },
+      {
+        arbiter: testContext.addresses.trivialArbiter,
+        demand: '0x',
+      },
+      0n, // no expiration
+    );
+
+    expect(attested.uid).toBeDefined();
+  });
+});
 ```
 
-## Available Exports
+## Dependencies
 
-- `setupTestEnvironment()` - Main setup function
-- `teardownTestEnvironment()` - Cleanup function
-- `TestContext` - TypeScript type for test context
-- `createTokenTestExtension()` - Token testing utilities
-- `compareAddresses()` - Address comparison helper
-- Token utility functions: `getErc20Balance`, `getERC721Owner`, `getERC1155Balance`
-- All contract artifacts and fixtures
-
-## Development
-
-To build the package:
-
-```bash
-npm run build
-```
-
-To run tests:
-
-```bash
-npm test
-```
+This package depends on:
+- `alkahest-ts`: The main Alkahest protocol client
+- `@viem/anvil`: Local Ethereum node for testing
+- `viem`: Ethereum client library
 
 ## License
 
 MIT
-
-## Contributing
-
-This package is designed to be used with Alkahest projects. For issues or feature requests, please open an issue in the repository.

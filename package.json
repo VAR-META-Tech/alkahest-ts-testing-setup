@@ -1,64 +1,47 @@
 {
-  "name": "alkahest-ts-test-setup",
-  "version": "0.0.2",
-  "description": "A complete testing environment setup for Alkahest testing with Anvil, contract deployments, and test accounts.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "name": "alkahest-test-env",
+  "version": "0.0.1",
+  "description": "Test environment setup for Alkahest protocol testing",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist",
-    "src",
-    "README.md",
-    "package.json"
+    "src"
   ],
   "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "npm run build",
+    "build": "tsup src/index.ts --format esm,cjs",
+    "build:types": "tsup src/index.ts --dts --format esm,cjs",
     "test": "bun test",
-    "test:jest": "jest",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@viem/anvil": "^0.0.6",
-    "bun-types": "^1.2.16",
-    "viem": "^2.0.0",
-    "zod": "^3.22.0"
-  },
-  "peerDependencies": {
-    "arktype": "^2.0.0",
-    "bun": "^1.0.0"
-  },
-  "peerDependenciesOptional": {
-    "arktype": true
-  },
-  "devDependencies": {
-    "@types/jest": "^29.0.0",
-    "@types/jquery": "^3.5.32",
-    "@types/node": "^20.0.0",
-    "jest": "^29.0.0",
-    "typescript": "^5.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VAR-META-Tech/alkahest-ts-testing-setup.git"
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "alkahest",
-    "testing",
-    "blockchain",
-    "anvil",
     "ethereum",
+    "testing",
     "viem",
-    "test-environment",
-    "smart-contracts"
+    "anvil"
   ],
-  "author": "VarMeta Tech",
-  "license": "MIT"
+  "author": "Alkahest Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.3.6",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "alkahest-ts": "^0.5.0"
+  },
+  "peerDependencies": {
+    "@viem/anvil": "^0.0.10",
+    "typescript": "^5.0.0",
+    "viem": "^2.30.6"
+  }
 }

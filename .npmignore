@@ -4,9 +4,6 @@ src/
 tsconfig.json
 *.test.ts
 *.spec.ts
-MIGRATION.md
-INTEGRATION.md
-
 # Build tools and configs
 .github/
 .vscode/

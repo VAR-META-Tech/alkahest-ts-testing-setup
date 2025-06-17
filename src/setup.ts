@@ -14,11 +14,11 @@ import {
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
-import { $ } from "bun";
+import { makeClient } from "alkahest-ts";
 import {
   createTokenTestExtension,
   type AlkahestTestActions,
-} from "./utils/tokenTestUtils";
+} from "./tokenTestUtils";
 
 // Import contract artifacts
 import ERC20EscrowObligation from "./contracts/ERC20EscrowObligation.json";
@@ -43,7 +43,7 @@ import TrustedPartyArbiter from "./contracts/TrustedPartyArbiter.json";
 import SpecificAttestationArbiter from "./contracts/SpecificAttestationArbiter.json";
 import AnyArbiter from "./contracts/AnyArbiter.json";
 import AllArbiter from "./contracts/AllArbiter.json";
-import IntrinsicsArbiter from "./contracts/IntrinsicsArbiter.json";
+import IntrinsicsArbiter from "./contracts/IntrinsicsArbiter2.json";
 import IntrinsicsArbiter2 from "./contracts/IntrinsicsArbiter2.json";
 
 // Import implementation contracts from fixtures
@@ -53,36 +53,25 @@ import MockERC20Permit from "./fixtures/MockERC20Permit.json";
 import MockERC721 from "./fixtures/MockERC721.json";
 import MockERC1155 from "./fixtures/MockERC1155.json";
 
-// Type placeholder for makeClient function (to be provided by consuming project)
-export type MakeClientFunction = (
-  walletClient: ReturnType<typeof createWalletClient> & PublicActions,
-  contractAddresses?: any
-) => any;
-
 export type TestContext = {
   // Anvil instance and clients
   anvil: ReturnType<typeof createAnvil>;
   testClient: TestClient & WalletActions & PublicActions & AlkahestTestActions;
   anvilInitState?: `0x${string}`;
-  
+
   // User addresses and clients
   alice: `0x${string}`;
   bob: `0x${string}`;
-  aliceClient: any; // Will be typed by the consuming project's makeClient
-  bobClient: any; // Will be typed by the consuming project's makeClient
-  aliceClientWs: any; // Will be typed by the consuming project's makeClient
-  bobClientWs: any; // Will be typed by the consuming project's makeClient
-  
-  // Wallet clients (for backward compatibility and custom client creation)
-  aliceWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
-  bobWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
-  aliceWalletClientWs: ReturnType<typeof createWalletClient> & PublicActions;
-  bobWalletClientWs: ReturnType<typeof createWalletClient> & PublicActions;
-  
+  aliceClient: ReturnType<typeof makeClient>;
+  bobClient: ReturnType<typeof makeClient>;
+  aliceClientWs: ReturnType<typeof makeClient>;
+  bobClientWs: ReturnType<typeof makeClient>;
+
   // Contract addresses
   addresses: {
     eas: `0x${string}`;
     easSchemaRegistry: `0x${string}`;
+
     // Arbiters
     trivialArbiter: `0x${string}`;
     trustedPartyArbiter: `0x${string}`;
@@ -92,30 +81,32 @@ export type TestContext = {
     intrinsicsArbiter2: `0x${string}`;
     anyArbiter: `0x${string}`;
     allArbiter: `0x${string}`;
-    // ERC20
+
     erc20EscrowObligation: `0x${string}`;
     erc20PaymentObligation: `0x${string}`;
     erc20BarterUtils: `0x${string}`;
-    // ERC721
+
     erc721EscrowObligation: `0x${string}`;
     erc721PaymentObligation: `0x${string}`;
     erc721BarterUtils: `0x${string}`;
-    // ERC1155
+
     erc1155EscrowObligation: `0x${string}`;
     erc1155PaymentObligation: `0x${string}`;
     erc1155BarterUtils: `0x${string}`;
-    // Token Bundle
+
     tokenBundleEscrowObligation: `0x${string}`;
     tokenBundlePaymentObligation: `0x${string}`;
     tokenBundleBarterUtils: `0x${string}`;
+
     // Attestation
     attestationEscrowObligation: `0x${string}`;
     attestationEscrowObligation2: `0x${string}`;
     attestationBarterUtils: `0x${string}`;
+
     // String obligation
     stringObligation: `0x${string}`;
   };
-  
+
   // Mock token addresses
   mockAddresses: {
     erc20A: `0x${string}`;
@@ -138,10 +129,9 @@ export type TestContext = {
  * 5. Distributes mock tokens to test accounts
  * 6. Creates Alkahest clients for each test account
  *
- * @param makeClient - Function to create Alkahest clients from wallet clients
  * @returns TestContext object with all necessary test resources
  */
-export async function setupTestEnvironment(makeClient: MakeClientFunction): Promise<TestContext> {
+export async function setupTestEnvironment(): Promise<TestContext> {
   const anvil = createAnvil();
   await anvil.start();
 
@@ -157,7 +147,6 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
   const bobAccount = privateKeyToAccount(generatePrivateKey(), {
     nonceManager,
   });
-
   const alice = aliceAccount.address;
   const bob = bobAccount.address;
 
@@ -207,6 +196,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
   const addresses: TestContext["addresses"] = {
     eas: "" as `0x${string}`,
     easSchemaRegistry: "" as `0x${string}`,
+
     trivialArbiter: "" as `0x${string}`,
     trustedPartyArbiter: "" as `0x${string}`,
     trustedOracleArbiter: "" as `0x${string}`,
@@ -215,21 +205,27 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     intrinsicsArbiter2: "" as `0x${string}`,
     anyArbiter: "" as `0x${string}`,
     allArbiter: "" as `0x${string}`,
+
     erc20EscrowObligation: "" as `0x${string}`,
     erc20PaymentObligation: "" as `0x${string}`,
     erc20BarterUtils: "" as `0x${string}`,
+
     erc721EscrowObligation: "" as `0x${string}`,
     erc721PaymentObligation: "" as `0x${string}`,
     erc721BarterUtils: "" as `0x${string}`,
+
     erc1155EscrowObligation: "" as `0x${string}`,
     erc1155PaymentObligation: "" as `0x${string}`,
     erc1155BarterUtils: "" as `0x${string}`,
+
     tokenBundleEscrowObligation: "" as `0x${string}`,
     tokenBundlePaymentObligation: "" as `0x${string}`,
     tokenBundleBarterUtils: "" as `0x${string}`,
+
     attestationEscrowObligation: "" as `0x${string}`,
     attestationEscrowObligation2: "" as `0x${string}`,
     attestationBarterUtils: "" as `0x${string}`,
+
     stringObligation: "" as `0x${string}`,
   };
 
@@ -251,6 +247,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
       bytecode: contract.bytecode.object as `0x${string}`,
       args,
     });
+
     const receipt = await testClient.waitForTransactionReceipt({ hash });
     return receipt.contractAddress as `0x${string}`;
   }
@@ -272,6 +269,8 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
   addresses.intrinsicsArbiter2 = await deployContract(IntrinsicsArbiter2);
   addresses.anyArbiter = await deployContract(AnyArbiter);
   addresses.allArbiter = await deployContract(AllArbiter);
+
+  // Deploy obligation contracts (all following same pattern with EAS and schema registry)
 
   // Helper to deploy obligation contracts
   async function deployObligation<
@@ -317,6 +316,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
   addresses.stringObligation = await deployObligation(StringObligation);
 
   // Deploy barter utils
+
   // ERC20 barter utils with cross-token functionality
   addresses.erc20BarterUtils = await deployContract(ERC20BarterCrossToken, [
     addresses.eas,
@@ -391,6 +391,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
   mockAddresses.erc1155B = await deployContract(MockERC1155);
 
   // Distribute tokens to test accounts
+
   // Transfer ERC20 tokens
   await testClient.writeContract({
     address: mockAddresses.erc20A,
@@ -398,6 +399,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     functionName: "transfer",
     args: [alice, parseEther("1000")],
   });
+
   await testClient.writeContract({
     address: mockAddresses.erc20B,
     abi: MockERC20Permit.abi,
@@ -412,6 +414,7 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     functionName: "mint",
     args: [alice],
   });
+
   await testClient.writeContract({
     address: mockAddresses.erc721B,
     abi: MockERC721.abi,
@@ -426,12 +429,17 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     functionName: "mint",
     args: [alice, 1n, 100n],
   });
+
   await testClient.writeContract({
     address: mockAddresses.erc1155B,
     abi: MockERC1155.abi,
     functionName: "mint",
     args: [bob, 1n, 100n],
   });
+
+  // Create Alkahest clients
+  const aliceClient = makeClient(aliceWalletClient, addresses);
+  const bobClient = makeClient(bobWalletClient, addresses);
 
   // Create WebSocket clients for real-time event watching
   const aliceWalletClientWs = createWalletClient({
@@ -448,9 +456,6 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     pollingInterval: 1000,
   }).extend(publicActions);
 
-  // Create Alkahest clients using the provided makeClient function
-  const aliceClient = makeClient(aliceWalletClient, addresses);
-  const bobClient = makeClient(bobWalletClient, addresses);
   const aliceClientWs = makeClient(aliceWalletClientWs, addresses);
   const bobClientWs = makeClient(bobWalletClientWs, addresses);
 
@@ -461,31 +466,17 @@ export async function setupTestEnvironment(makeClient: MakeClientFunction): Prom
     anvil,
     testClient,
     anvilInitState,
+
     alice,
     bob,
     aliceClient,
     bobClient,
     aliceClientWs,
     bobClientWs,
-    aliceWalletClient,
-    bobWalletClient,
-    aliceWalletClientWs,
-    bobWalletClientWs,
+
     addresses,
     mockAddresses,
   };
-}
-
-/**
- * Sets up a test environment without Alkahest clients (wallet clients only)
- * This is useful for projects that want to create their own clients or use the wallet clients directly
- * 
- * @returns TestContext object with wallet clients but null Alkahest clients
- */
-export async function setupTestEnvironmentWalletOnly(): Promise<TestContext> {
-  // Mock makeClient function that returns null
-  const mockMakeClient: MakeClientFunction = () => null;
-  return setupTestEnvironment(mockMakeClient);
 }
 
 /**
@@ -493,5 +484,21 @@ export async function setupTestEnvironmentWalletOnly(): Promise<TestContext> {
  * @param context The test context to tear down
  */
 export async function teardownTestEnvironment(context: TestContext) {
+  /*
+  try {
+    await context.anvil.stop();
+  } catch (e) {
+    // Ensure anvil is killed even if graceful stop fails
     await $`pkill anvil`;
+  }
+  */
+  // We'll use a simple shell command for now since $ might not be available
+  try {
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
+    const execAsync = promisify(exec);
+    await execAsync("pkill anvil");
+  } catch (e) {
+    // Ignore errors if anvil is not running
+  }
 }

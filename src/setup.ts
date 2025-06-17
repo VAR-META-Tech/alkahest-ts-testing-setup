@@ -53,6 +53,12 @@ import MockERC20Permit from "./fixtures/MockERC20Permit.json";
 import MockERC721 from "./fixtures/MockERC721.json";
 import MockERC1155 from "./fixtures/MockERC1155.json";
 
+// Type placeholder for makeClient function (to be provided by consuming project)
+export type MakeClientFunction = (
+  walletClient: ReturnType<typeof createWalletClient> & PublicActions,
+  addresses: any
+) => any;
+
 export type TestContext = {
   // Anvil instance and clients
   anvil: ReturnType<typeof createAnvil>;
@@ -62,6 +68,12 @@ export type TestContext = {
   // User addresses and clients
   alice: `0x${string}`;
   bob: `0x${string}`;
+  aliceClient: any; // Will be typed by the consuming project's makeClient
+  bobClient: any; // Will be typed by the consuming project's makeClient
+  aliceClientWs: any; // Will be typed by the consuming project's makeClient
+  bobClientWs: any; // Will be typed by the consuming project's makeClient
+  
+  // Wallet clients (for backward compatibility and custom client creation)
   aliceWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
   bobWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
   aliceWalletClientWs: ReturnType<typeof createWalletClient> & PublicActions;
@@ -124,11 +136,12 @@ export type TestContext = {
  * 3. Deploys all core contracts (EAS, obligations, arbiters, etc.)
  * 4. Deploys mock tokens for testing
  * 5. Distributes mock tokens to test accounts
- * 6. Creates wallet clients for each test account
+ * 6. Creates Alkahest clients for each test account
  *
+ * @param makeClient - Function to create Alkahest clients from wallet clients
  * @returns TestContext object with all necessary test resources
  */
-export async function setupTestEnvironment(): Promise<TestContext> {
+export async function setupTestEnvironment(makeClient: MakeClientFunction): Promise<TestContext> {
   const anvil = createAnvil();
   await anvil.start();
 
@@ -435,6 +448,12 @@ export async function setupTestEnvironment(): Promise<TestContext> {
     pollingInterval: 1000,
   }).extend(publicActions);
 
+  // Create Alkahest clients using the provided makeClient function
+  const aliceClient = makeClient(aliceWalletClient, addresses);
+  const bobClient = makeClient(bobWalletClient, addresses);
+  const aliceClientWs = makeClient(aliceWalletClientWs, addresses);
+  const bobClientWs = makeClient(bobWalletClientWs, addresses);
+
   // Capture initial state for test resets
   const anvilInitState = await testClient.dumpState();
 
@@ -444,6 +463,10 @@ export async function setupTestEnvironment(): Promise<TestContext> {
     anvilInitState,
     alice,
     bob,
+    aliceClient,
+    bobClient,
+    aliceClientWs,
+    bobClientWs,
     aliceWalletClient,
     bobWalletClient,
     aliceWalletClientWs,
@@ -451,6 +474,18 @@ export async function setupTestEnvironment(): Promise<TestContext> {
     addresses,
     mockAddresses,
   };
+}
+
+/**
+ * Sets up a test environment without Alkahest clients (wallet clients only)
+ * This is useful for projects that want to create their own clients or use the wallet clients directly
+ * 
+ * @returns TestContext object with wallet clients but null Alkahest clients
+ */
+export async function setupTestEnvironmentWalletOnly(): Promise<TestContext> {
+  // Mock makeClient function that returns null
+  const mockMakeClient: MakeClientFunction = () => null;
+  return setupTestEnvironment(mockMakeClient);
 }
 
 /**

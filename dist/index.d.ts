@@ -1,4 +1,4 @@
-export { setupTestEnvironment, teardownTestEnvironment, type TestContext, } from "./setup";
+export { setupTestEnvironment, setupTestEnvironmentWalletOnly, teardownTestEnvironment, type TestContext, type MakeClientFunction, } from "./setup";
 export { createTokenTestExtension, compareAddresses, getErc20Balance, getERC721Owner, getERC1155Balance, type AlkahestTestActions, } from "./utils/tokenTestUtils";
 export { default as EAS } from "./fixtures/EAS.json";
 export { default as SchemaRegistry } from "./fixtures/SchemaRegistry.json";

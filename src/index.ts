@@ -1,8 +1,10 @@
 // Main exports
 export {
   setupTestEnvironment,
+  setupTestEnvironmentWalletOnly,
   teardownTestEnvironment,
   type TestContext,
+  type MakeClientFunction,
 } from "./setup";
 
 // Token test utilities

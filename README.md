@@ -31,16 +31,16 @@ bun add alkahest-ts-test-setup
 
 ```typescript
 import { setupTestEnvironment, teardownTestEnvironment } from 'alkahest-ts-test-setup';
+import { makeClient } from 'your-alkahest-project';
 
-// Setup test environment
-const testContext = await setupTestEnvironment();
+// Setup test environment with Alkahest clients
+const testContext = await setupTestEnvironment(makeClient);
 
-// Access test accounts
-const { alice, bob, addresses, mockAddresses } = testContext;
+// Access test accounts and pre-created Alkahest clients
+const { alice, bob, aliceClient, bobClient, addresses, mockAddresses } = testContext;
 
-// Use Alkahest clients (you'll need to create these with your makeClient function)
-// const aliceClient = makeClient(testContext.aliceWalletClient, addresses);
-// const bobClient = makeClient(testContext.bobWalletClient, addresses);
+// Alkahest clients are ready to use immediately!
+// aliceClient and bobClient are already created using your makeClient function
 
 // Run your tests here...
 
@@ -54,8 +54,10 @@ The `setupTestEnvironment()` function returns a `TestContext` object containing:
 
 ### Accounts and Clients
 - `alice` / `bob`: Test account addresses
-- `aliceWalletClient` / `bobWalletClient`: Viem wallet clients
-- `aliceWalletClientWs` / `bobWalletClientWs`: WebSocket clients for real-time events
+- `aliceClient` / `bobClient`: Ready-to-use Alkahest clients
+- `aliceClientWs` / `bobClientWs`: WebSocket Alkahest clients for real-time events
+- `aliceWalletClient` / `bobWalletClient`: Underlying Viem wallet clients
+- `aliceWalletClientWs` / `bobWalletClientWs`: WebSocket wallet clients
 - `testClient`: Test client with deployment capabilities
 
 ### Contract Addresses

@@ -4,12 +4,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupTestEnvironment = setupTestEnvironment;
+exports.setupTestEnvironmentWalletOnly = setupTestEnvironmentWalletOnly;
 exports.teardownTestEnvironment = teardownTestEnvironment;
 const anvil_1 = require("@viem/anvil");
 const viem_1 = require("viem");
 const accounts_1 = require("viem/accounts");
 const chains_1 = require("viem/chains");
-// import { $ } from "bun";
+const bun_1 = require("bun");
 const tokenTestUtils_1 = require("./utils/tokenTestUtils");
 // Import contract artifacts
 const ERC20EscrowObligation_json_1 = __importDefault(require("./contracts/ERC20EscrowObligation.json"));
@@ -51,11 +52,12 @@ const MockERC1155_json_1 = __importDefault(require("./fixtures/MockERC1155.json"
  * 3. Deploys all core contracts (EAS, obligations, arbiters, etc.)
  * 4. Deploys mock tokens for testing
  * 5. Distributes mock tokens to test accounts
- * 6. Creates wallet clients for each test account
+ * 6. Creates Alkahest clients for each test account
  *
+ * @param makeClient - Function to create Alkahest clients from wallet clients
  * @returns TestContext object with all necessary test resources
  */
-async function setupTestEnvironment() {
+async function setupTestEnvironment(makeClient) {
     const anvil = (0, anvil_1.createAnvil)();
     await anvil.start();
     const chain = chains_1.foundry;
@@ -304,6 +306,11 @@ async function setupTestEnvironment() {
         transport: (0, viem_1.webSocket)(`ws://localhost:${anvil.port}`),
         pollingInterval: 1000,
     }).extend(viem_1.publicActions);
+    // Create Alkahest clients using the provided makeClient function
+    const aliceClient = makeClient(aliceWalletClient, addresses);
+    const bobClient = makeClient(bobWalletClient, addresses);
+    const aliceClientWs = makeClient(aliceWalletClientWs, addresses);
+    const bobClientWs = makeClient(bobWalletClientWs, addresses);
     // Capture initial state for test resets
     const anvilInitState = await testClient.dumpState();
     return {
@@ -312,6 +319,10 @@ async function setupTestEnvironment() {
         anvilInitState,
         alice,
         bob,
+        aliceClient,
+        bobClient,
+        aliceClientWs,
+        bobClientWs,
         aliceWalletClient,
         bobWalletClient,
         aliceWalletClientWs,
@@ -321,27 +332,36 @@ async function setupTestEnvironment() {
     };
 }
 /**
+ * Sets up a test environment without Alkahest clients (wallet clients only)
+ * This is useful for projects that want to create their own clients or use the wallet clients directly
+ *
+ * @returns TestContext object with wallet clients but null Alkahest clients
+ */
+async function setupTestEnvironmentWalletOnly() {
+    // Mock makeClient function that returns null
+    const mockMakeClient = () => null;
+    return setupTestEnvironment(mockMakeClient);
+}
+/**
  * Tears down the test environment
  * @param context The test context to tear down
  */
 async function teardownTestEnvironment(context) {
     try {
-        // Try graceful stop first with timeout
-        const stopPromise = context.anvil.stop();
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Anvil stop timeout')), 5000);
-        });
-        await Promise.race([stopPromise, timeoutPromise]);
+        // Try to stop anvil gracefully with a timeout
+        await Promise.race([
+            context.anvil.stop(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Anvil stop timeout")), 5000))
+        ]);
     }
-    catch (e) {
-        // Fallback to force kill
-        console.warn('Graceful stop failed, force killing anvil:', e);
-        const { execSync } = require('child_process');
+    catch (error) {
+        // Fallback to killing anvil process if graceful stop fails or times out
+        console.warn("Failed to stop anvil gracefully, falling back to pkill:", error);
         try {
-            execSync('pkill -f anvil', { stdio: 'ignore' });
+            await (0, bun_1.$) `pkill anvil`;
         }
         catch (killError) {
-            console.warn('Failed to kill anvil process:', killError);
+            console.warn("Failed to kill anvil process:", killError);
         }
     }
 }

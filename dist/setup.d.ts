@@ -1,12 +1,17 @@
 import { createAnvil } from "@viem/anvil";
 import { createWalletClient, type PublicActions, type WalletActions, type TestClient } from "viem";
 import { type AlkahestTestActions } from "./utils/tokenTestUtils";
+export type MakeClientFunction = (walletClient: ReturnType<typeof createWalletClient> & PublicActions, addresses: any) => any;
 export type TestContext = {
     anvil: ReturnType<typeof createAnvil>;
     testClient: TestClient & WalletActions & PublicActions & AlkahestTestActions;
     anvilInitState?: `0x${string}`;
     alice: `0x${string}`;
     bob: `0x${string}`;
+    aliceClient: any;
+    bobClient: any;
+    aliceClientWs: any;
+    bobClientWs: any;
     aliceWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
     bobWalletClient: ReturnType<typeof createWalletClient> & PublicActions;
     aliceWalletClientWs: ReturnType<typeof createWalletClient> & PublicActions;
@@ -57,11 +62,19 @@ export type TestContext = {
  * 3. Deploys all core contracts (EAS, obligations, arbiters, etc.)
  * 4. Deploys mock tokens for testing
  * 5. Distributes mock tokens to test accounts
- * 6. Creates wallet clients for each test account
+ * 6. Creates Alkahest clients for each test account
  *
+ * @param makeClient - Function to create Alkahest clients from wallet clients
  * @returns TestContext object with all necessary test resources
  */
-export declare function setupTestEnvironment(): Promise<TestContext>;
+export declare function setupTestEnvironment(makeClient: MakeClientFunction): Promise<TestContext>;
+/**
+ * Sets up a test environment without Alkahest clients (wallet clients only)
+ * This is useful for projects that want to create their own clients or use the wallet clients directly
+ *
+ * @returns TestContext object with wallet clients but null Alkahest clients
+ */
+export declare function setupTestEnvironmentWalletOnly(): Promise<TestContext>;
 /**
  * Tears down the test environment
  * @param context The test context to tear down

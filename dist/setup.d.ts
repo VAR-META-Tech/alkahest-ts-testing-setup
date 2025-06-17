@@ -1,7 +1,7 @@
 import { createAnvil } from "@viem/anvil";
 import { createWalletClient, type PublicActions, type WalletActions, type TestClient } from "viem";
 import { type AlkahestTestActions } from "./utils/tokenTestUtils";
-export type MakeClientFunction = (walletClient: ReturnType<typeof createWalletClient> & PublicActions, addresses: any) => any;
+export type MakeClientFunction = (walletClient: ReturnType<typeof createWalletClient> & PublicActions, contractAddresses?: any) => any;
 export type TestContext = {
     anvil: ReturnType<typeof createAnvil>;
     testClient: TestClient & WalletActions & PublicActions & AlkahestTestActions;

@@ -56,7 +56,7 @@ import MockERC1155 from "./fixtures/MockERC1155.json";
 // Type placeholder for makeClient function (to be provided by consuming project)
 export type MakeClientFunction = (
   walletClient: ReturnType<typeof createWalletClient> & PublicActions,
-  addresses: any
+  contractAddresses?: any
 ) => any;
 
 export type TestContext = {

@@ -1,6 +1,6 @@
 {
   "name": "alkahest-ts-test-setup",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "A complete testing environment setup for Alkahest testing with Anvil, contract deployments, and test accounts.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

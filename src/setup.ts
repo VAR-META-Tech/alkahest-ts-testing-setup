@@ -493,21 +493,5 @@ export async function setupTestEnvironmentWalletOnly(): Promise<TestContext> {
  * @param context The test context to tear down
  */
 export async function teardownTestEnvironment(context: TestContext) {
-  try {
-    // Try to stop anvil gracefully with a timeout
-    await Promise.race([
-      context.anvil.stop(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Anvil stop timeout")), 5000)
-      )
-    ]);
-  } catch (error) {
-    // Fallback to killing anvil process if graceful stop fails or times out
-    console.warn("Failed to stop anvil gracefully, falling back to pkill:", error);
-    try {
-      await $`pkill anvil`;
-    } catch (killError) {
-      console.warn("Failed to kill anvil process:", killError);
-    }
-  }
+    await $`pkill anvil`;
 }
